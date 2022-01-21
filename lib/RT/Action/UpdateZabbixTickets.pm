@@ -24,7 +24,7 @@ sub Commit {
     my $new_ticket_id = $new_ticket->id;
 
     my $subject = $attachment->GetHeader('Subject');
-    my $body = $attachment->Content;
+    my $body = $self->TransactionObj->Content;
     return unless $subject;
 
     if ((my($type, $trigger) = $subject =~ m{(OK): (.*)}i) && (my ($host) = $body =~ m{Host: (.*)}i)) {
