@@ -2,49 +2,58 @@ NAME
     RT::Extension::Zabbix - Merge and resolve Zabbix tickets
 
 DESCRIPTION
+    Zabbix is a monitoring system. It's email alerts can be piped to request
+    tracker. This extension automatically merges and resolves issues when it
+    receives the OK alert.
 
-    Used to merge and resolve Zabbix tickets automatically.
-    Based on https://github.com/bestpractical/rt-extension-nagios, which is in turn 
-    based on http://wiki.bestpractical.com/view/AutoCloseOnZabbixRecoveryMessages
+ZABBIX SETUP
+    Notifications need to be setup to go from zabbix to your request tracker
+    queue.
 
-INSTALLATION
+    The emails from Zabbix must have the default subject line of:
+    {TRIGGER.STATUS}: {TRIGGER.NAME}
 
-        perl Makefile.PL
-        make
-        make install
-        make initdb # first time only
+    If the subject line is changed, this extension won't be able to match
+    them.
 
-	the "make initdb" adds the scrips to the database, so be sure to run it the first
-	time or nothing will happen.
+    The body of the email must also contain: Host: {HOST.NAME}
 
-    with RT 3.8 or later, you need to update "Plugins" configuration:
+    The combination of {TRIGGER.NAME} in the subject and {HOST.NAME} in the
+    body will be used to uniquely identify the alerts.
 
-        Set( @Plugins, qw(... RT::Extension::Zabbix) );
+REQUEST TRACKER CONFIGURATION
+    After the new ticket is created, the following is done:
 
-    below are the extra options:
-    (check out lib/RT/Extension/Zabbix.pm if you are confused):
+    1. find all the other active tickets in the same queue( unless
+    RT->Config->Get('ZabbixSearchAllQueues') is true, which will cause to
+    search all the queues ) with the same values of $triggerstatus and
+    $host.
 
-        Set($ZabbixSearchAllQueues, 1);
+    2. if RT->Config->Get('ZabbixMergeTickets') is true, merge all of them.
+    if $triggerstatus is 'OK', resolve the merged ticket.
+
+    if RT->Config->Get('ZabbixMergeTickets') is false and $triggerstatus is
+    'OK', resolve all them.
+
+    NOTE:
+
+    config items like ZabbixSearchAllQueues and ZabbixMergeTickets can be
+    set in etc/RT_SiteConfig.pm like this:
+
+        Set($ZabbixSearchAllQueues, 1); # true
         Set($ZabbixMergeTickets, 0); # false, don't merge
         Set($ZabbixMergeTickets, 1); # merge into the newest ticket.
         Set($ZabbixMergeTickets, -1); # merge into the oldest ticket.
-        Set($ZabbixResolvedStatus, "resolved");
 
-	you may also need to enable full text searching to get the hostname
-	from the body of the ticket:
+    by default, tickets will be resolved with status resolved, you can
+    customize this via config item ZabbixResolvedStatus, e.g.
 
-		Set(%FullTextSearch,
-	    	Enable => 1,
-		   Indexed => 0,
-		);
-
+        Set($ZabbixResolvedStatus, "recovered");
 
 AUTHOR
-
-Grant Emsley  C<< <grant@emsley.ca> >>
+    Grant Emsley <grant@emsley.ca>
 
 LICENCE AND COPYRIGHT
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
 
