@@ -18,17 +18,22 @@ sub Prepare {
 sub Commit {
     my $self = shift;
 
-    my $attachment = $self->TransactionObj->Attachments->First;
-    return 1 unless $attachment;
     my $new_ticket    = $self->TicketObj;
     my $new_ticket_id = $new_ticket->id;
 
-    my $subject = $attachment->GetHeader('Subject');
+    my $subject = $new_ticket->Subject;
     my $body = $self->TransactionObj->Content;
     return unless $subject;
 
+    if ((my($type, $trigger) = $subject =~ m{(PROBLEM|OK): (.*)}i) && (my ($host) = $body =~ m{Host: (.*)}i)) {
+        $RT::Logger->info("ZABBIX: Found a Zabbix message.");
+        $RT::Logger->info("ZABBIX: Type: $type");
+        $RT::Logger->info("ZABBIX: Trigger: $trigger");
+        $RT::Logger->info("ZABBIX: Host: $host");
+    }        
+
     if ((my($type, $trigger) = $subject =~ m{(OK): (.*)}i) && (my ($host) = $body =~ m{Host: (.*)}i)) {
-        $RT::Logger->info("Found a recovery message, extracted type, trigger and host with values $type, $trigger, $host");
+        $RT::Logger->info("Found a recovery message, extracted type trigger and host with values $type, $trigger, $host");
 
 		# Search for tickets
 		my $tickets = RT::Tickets->new( $self->CurrentUser );
