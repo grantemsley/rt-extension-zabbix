@@ -9,7 +9,7 @@ RT::Extension::Zabbix - Merge and resolve Zabbix tickets
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '1.00';
 
 1;
 
